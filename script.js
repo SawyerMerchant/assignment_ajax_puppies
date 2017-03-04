@@ -6,15 +6,16 @@ function Puppy(name, breed, created_at, id) {
 }
 
 function Breed(name, id){
+  console.log(this);
   this.name = name;
   this.id = id;
 }
 
 var model = {
-  init: function() {
-    this.puppies = [];
-    this.breeds = [];
-  },
+  // init: function() {
+  //   model.puppies = [];
+  //   model.breeds = [];
+  // },
 
   addPuppy: function(puppyName, puppyBreed, created_at, id) {
     model.puppies.push(new Puppy(puppyName, puppyBreed, created_at, id));
@@ -23,7 +24,8 @@ var model = {
   createPuppyList: function(response) {
     model.puppies = [];
     for(var puppy in response) {
-      model.addPuppy(response[puppy].name, response[puppy].breed, response[puppy].created_at, response[puppy].id);
+      var pup = response[puppy];
+      model.addPuppy(pup.name, pup.breed, pup.created_at, pup.id);
     }
   },
 
@@ -37,9 +39,9 @@ var model = {
 
 var controller = {
   init: function() {
+    // model.init(); // do this first
     API.getBreeds();
     API.getPuppyList();
-    model.init(); // do this first
     view.submitButtonListener();
     view.refreshListener();
     view.puppyListListener();
@@ -133,7 +135,6 @@ var API = {
               success: function(response) {
                 puppyListReturn = true;
                 model.createPuppyList(response);
-                view.render(model.puppies, model.breeds);
               }
     });
     return puppyPromise;
@@ -150,18 +151,20 @@ var API = {
 
   doneWaiting: function() {
     var $msg = $("#waiting-message");
-    setInterval(function() {
+    var waitingForAPI = setInterval (function() {
       if (API.count >= 1) {
         $msg.empty()
             .text("Sorry this is taking so long...");
       }
       if (puppyListReturn === true && breedsListReturn === true){
+        view.render(model.puppies, model.breeds);
         $msg.empty()
             .text("Finished")
             .css('color', 'green');
         setTimeout(function() {
           $("#waiting").hide('slowly');
         }, 500);
+        clearInterval(waitingForAPI);
       }
       API.count +=1;
     }, 1000);

@@ -56,6 +56,7 @@ var controller = {
 
     if(puppyName) {
       API.sendPuppy(puppyName, breedID);
+      view.renderAddedPuppy();
       view.clearInput();
     } else {
       view.nameError();
@@ -71,14 +72,28 @@ var view = {
   },
 
   refreshListener: function() {
-    $("#refresh").on("click", API.getPuppyList);
+    $("#refresh").on("click", view.updatePuppies);
+  },
+
+  updatePuppies: function() {
+    API.getPuppyList();
+    view.renderPuppyList(model.puppies);
   },
 
   puppyListListener: function() {
     $("#puppy-list").on("click", "button", function(e) {
       e.preventDefault();
+      $id = $(e.target).data("id");
       API.adoptPuppy($(e.target).data("id"));
+      view.removePuppy($id);
     });
+  },
+
+  removePuppy: function(id) {
+    // console.log($id);
+    $adoptedPuppy = $('[data-id=' + id + ']').parent();
+    // console.log($adoptedPuppy);
+    $adoptedPuppy.remove();
   },
 
   getPuppyName: function() {
@@ -93,17 +108,18 @@ var view = {
     $('#puppy-name').val("");
   },
 
-  render: function(puppyList, breedList) {
 
-    $select = $("select");
-    $select.empty();
-    for(var b in breedList) {
-      $option = $("<option>");
-      $option.text(breedList[b].name)
-            .val(breedList[b].id);
-      $select.append($option);
-    }
+  renderAddedPuppy: function() {
+    $list = $('#puppy-list');
+    $name = $('#puppy-name').val();
+    $breed = $('select option:selected').text();
+    $postAge = jQuery.timeago($.now());
+    $newli = $('<li></li>').text($name + " (" +
+                          $breed + "), created" + $postAge);
+    $list.prepend( $newli );
+  },
 
+  renderPuppyList: function(puppyList) {
     $list = $('#puppy-list');
     $list.empty();
 
@@ -113,6 +129,17 @@ var view = {
         .text(puppyList[puppy].name + " (" + puppyList[puppy].breed.name + "), created " + $postAge)
         .append( $('<button>Adopt</button>').attr('data-id', puppyList[puppy].id) );
       $list.append( $newli );
+    }
+  },
+
+  renderBreedList: function(breedList) {
+    $select = $("select");
+    $select.empty();
+    for(var b in breedList) {
+      $option = $("<option>");
+      $option.text(breedList[b].name)
+            .val(breedList[b].id);
+      $select.append($option);
     }
   },
 
@@ -157,7 +184,9 @@ var API = {
             .text("Sorry this is taking so long...");
       }
       if (puppyListReturn === true && breedsListReturn === true){
-        view.render(model.puppies, model.breeds);
+        // view.render(model.puppies, model.breeds);
+        view.renderPuppyList(model.puppies);
+        view.renderBreedList(model.breeds);
         $msg.empty()
             .text("Finished")
             .css('color', 'green');
